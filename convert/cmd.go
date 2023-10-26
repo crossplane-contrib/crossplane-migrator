@@ -95,8 +95,9 @@ func (c *Cmd) Run() error {
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var output io.Writer
+
 	if c.OutputFile != "" {
-		f, err := os.OpenFile(c.OutputFile, os.O_CREATE, 0644)
+		f, err := os.OpenFile(c.OutputFile, os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			panic(err)
 		}
@@ -106,7 +107,9 @@ func (c *Cmd) Run() error {
 		output = os.Stdout
 	}
 
-	s.Encode(drc, output)
-
+	err = s.Encode(drc, output)
+	if err != nil {
+		return err
+	}
 	return nil
 }
