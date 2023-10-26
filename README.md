@@ -9,14 +9,16 @@ deprecated.
 
 ## Example Use
 
+Write out a DeploymentRuntimeConfigFile from a ControllerConfig.
+
 ```console
-  # Write out a DeploymentRuntimeConfigFile from a ControllerConfig 
+migrator convert -i my-controllerconfig.yaml -o my-drconfig.yaml
+```
 
-  migrator convert -i my-controllerconfig.yaml -o my-drconfig.yaml
+Create a new DeploymentRuntimeConfigFile via Stdout
 
-  # Create a new DeploymentRuntimeConfigFile via Stdout
-
-  migrator convert -i cc.yaml | grep -v creationTimestamp | kubectl apply -f - 
+```console
+migrator convert -i cc.yaml | grep -v creationTimestamp | kubectl apply -f - 
 ```  
 
 Once the new `DeploymentRuntimeConfig` has been created on the Crossplane Cluster it can be used by Function and Provider
