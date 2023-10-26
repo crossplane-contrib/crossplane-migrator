@@ -28,7 +28,6 @@ import (
 	"github.com/crossplane/crossplane/apis/pkg/v1beta1"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 )
@@ -92,12 +91,6 @@ func (c *Cmd) Run() error {
 	if err != nil {
 		return err
 	}
-
-	drc.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   v1beta1.Group,
-		Kind:    v1beta1.DeploymentRuntimeConfigKind,
-		Version: v1beta1.DeploymentRuntimeConfigGroupVersionKind.Version,
-	})
 
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 

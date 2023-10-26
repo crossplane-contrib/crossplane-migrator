@@ -6,6 +6,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/crossplane/crossplane/apis/pkg/v1alpha1"
 	"github.com/crossplane/crossplane/apis/pkg/v1beta1"
@@ -139,6 +140,11 @@ func NewContainerFromControllerConfig(cc *v1alpha1.ControllerConfig) *corev1.Con
 
 func NewDeploymentRuntimeConfig(options ...func(*v1beta1.DeploymentRuntimeConfig)) *v1beta1.DeploymentRuntimeConfig {
 	drc := &v1beta1.DeploymentRuntimeConfig{}
+	drc.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   v1beta1.Group,
+		Kind:    v1beta1.DeploymentRuntimeConfigKind,
+		Version: v1beta1.DeploymentRuntimeConfigGroupVersionKind.Version,
+	})
 	for _, o := range options {
 		o(drc)
 	}
