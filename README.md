@@ -1,11 +1,8 @@
 # ControllerConfig-migrator
 
-Migrates deprecated Crossplane ControllerConfig to DeploymentRuntimeConfig
+This Migrates deprecated [Crossplane ControllerConfig](https://docs.crossplane.io/latest/concepts/packages/#speccontrollerconfigref) to a [DeploymentRuntimeConfig](https://github.com/crossplane/crossplane/blob/master/design/one-pager-package-runtime-config.md)
 
-This command converts a Crossplane ControllerConfig to a DeploymentRuntimeConfig.
-
-DeploymentRuntimeConfig was introduced in Crossplane 1.14 and ControllerConfig is
-deprecated.
+DeploymentRuntimeConfig was introduced in Crossplane 1.14 and ControllerConfig has been marked [deprecated](https://github.com/crossplane/crossplane/issues/3601) since Crossplane 1.11.0
 
 ## Example Use
 
