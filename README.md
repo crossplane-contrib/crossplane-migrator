@@ -1,0 +1,2 @@
+# ControllerConfig-migrator
+Migrates deprecated Crossplane ControllerConfig to DeploymentRuntimeConfig
