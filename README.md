@@ -6,13 +6,13 @@ DeploymentRuntimeConfig was introduced in Crossplane 1.14 and ControllerConfig h
 
 ## Example Use
 
-Write out a DeploymentRuntimeConfigFile from a ControllerConfig.
+Write out a DeploymentRuntimeConfig file from a ControllerConfig manifest:
 
 ```console
 migrator convert -i my-controllerconfig.yaml -o my-drconfig.yaml
 ```
 
-Create a new DeploymentRuntimeConfigFile via Stdout
+Create a new DeploymentRuntimeConfig via Stdout
 
 ```console
 migrator convert -i cc.yaml | grep -v creationTimestamp | kubectl apply -f - 
@@ -43,6 +43,7 @@ go build -o migrator
 
 ## Known Issues
 
-- Output `metadata` fields contain a `creationTimestamp`
-- The migrator attempts to be as accurate as possible in mapping the fields but has not been fully tested. The [test_suite](convert/converter_test.go) validates conformance
+- The migrator attempts to be as accurate as possible in mapping the fields but has not been fully tested. The [test_suite](convert/converter_test.go) attempts to cover all cases.
+- The generated `DeploymentRuntimeConfig` has the same `Name:` as the ControllerConfig
+- Output `metadata` fields contain a `creationTimestamp`. This is a known Kubernetes issue that may be addressed via PR <https://github.com/kubernetes/kubernetes/pull/120757> merged in October 2023. Until upstream tooling is updated, remove the field from manifests.
   
