@@ -1,0 +1,10 @@
+apiVersion: pkg.crossplane.io/v1alpha1
+kind: ControllerConfig
+metadata:
+  name: enable-flags
+  labels:
+    app: crossplane-provider-aws
+spec:
+  args:
+    - -d
+    - --enable-external-secret-stores

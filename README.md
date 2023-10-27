@@ -9,7 +9,7 @@ DeploymentRuntimeConfig was introduced in Crossplane 1.14 and ControllerConfig h
 Write out a DeploymentRuntimeConfig file from a ControllerConfig manifest:
 
 ```console
-migrator convert -i my-controllerconfig.yaml -o my-drconfig.yaml
+migrator convert -i examples/enable-flags.yaml  -o my-drconfig.yaml
 ```
 
 Create a new DeploymentRuntimeConfig via Stdout
