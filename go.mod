@@ -1,4 +1,4 @@
-module github.com/stevendborrelli/ControllerConfig-migrator
+module github.com/stevendborrelli/crossplane-migrator
 
 go 1.20
 

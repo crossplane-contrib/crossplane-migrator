@@ -19,7 +19,7 @@ package main
 import (
 	"github.com/alecthomas/kong"
 
-	"github.com/stevendborrelli/ControllerConfig-migrator/convert"
+	"github.com/stevendborrelli/crossplane-migrator/convert"
 )
 
 var _ = kong.Must(&cli)
