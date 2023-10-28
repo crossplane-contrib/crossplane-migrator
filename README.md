@@ -1,4 +1,4 @@
-# ControllerConfig-migrator
+# crossplane-migrator
 
 This golang-based binary migrates deprecated [Crossplane ControllerConfig](https://docs.crossplane.io/latest/concepts/packages/#speccontrollerconfigref) to a [DeploymentRuntimeConfig](https://github.com/crossplane/crossplane/blob/master/design/one-pager-package-runtime-config.md).
 
@@ -9,7 +9,7 @@ This utility is proposed to be added to the Crossplane CLI in [1.15](https://git
 ## Installing 
 
 ```shell
-go install github.com/stevendborrelli/ControllerConfig-migrator@latest
+go install github.com/stevendborrelli/crossplane-migrator@latest
 ```
 
 ## Example Use
@@ -17,13 +17,13 @@ go install github.com/stevendborrelli/ControllerConfig-migrator@latest
 Write out a DeploymentRuntimeConfig file from a ControllerConfig manifest:
 
 ```console
-ControllerConfig-migrator convert -i examples/enable-flags.yaml  -o my-drconfig.yaml
+crossplane-migrator convert -i examples/enable-flags.yaml  -o my-drconfig.yaml
 ```
 
 Create a new DeploymentRuntimeConfig via Stdout
 
 ```console
-ControllerConfig-migrator migrator convert -i cc.yaml | grep -v creationTimestamp | kubectl apply -f - 
+crossplane-migrator migrator convert -i cc.yaml | grep -v creationTimestamp | kubectl apply -f - 
 ```  
 
 Once the new `DeploymentRuntimeConfig` has been created on the Crossplane Cluster it can be used by Function and Provider
@@ -46,7 +46,7 @@ spec:
 ## Building
 
 ```console
-go build -o ControllerConfig-migrator
+go build -o crossplane-migrator
 ```
 
 ## Known Issues
