@@ -33,7 +33,7 @@ Commands:
                               DeploymentRuntimeConfigs.
   new-pipeline-composition    Convert Compositions to Composition Pipelines with
                               function-patch-and-transform.
-```                              
+```
 
 ### Migrating ControllerConfigs to DeploymentRuntimeConfigs
 
@@ -94,7 +94,7 @@ go build -o crossplane-migrator
 
 ## Known Issues
 
-- The migrator attempts to be as accurate as possible in mapping the fields but has not been fully tested. The [test_suite](convert/converter_test.go) attempts to cover all cases.
+- The migrator attempts to be as accurate as possible in mapping the fields but has not been fully tested. The [ControllerConfig test suite](newdeploymentruntime/converter_test.go) [Composition test suite](newpipeinecomposition/converter_test.go) attempt to cover all cases.
 - The generated `DeploymentRuntimeConfig` has the same `Name:` as the ControllerConfig
 - Output `metadata` fields contain a `creationTimestamp`. This is a known Kubernetes issue that may be addressed via PR <https://github.com/kubernetes/kubernetes/pull/120757> merged in October 2023. Until upstream tooling is updated, remove the field from manifests.
   
