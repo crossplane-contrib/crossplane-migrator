@@ -17,7 +17,6 @@ limitations under the License.
 package newdeploymentruntime
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -26,6 +25,7 @@ import (
 
 	"github.com/crossplane/crossplane/apis/pkg/v1alpha1"
 	"github.com/crossplane/crossplane/apis/pkg/v1beta1"
+	"github.com/pkg/errors"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -51,19 +51,26 @@ Examples:
 
   # Write out a DeploymentRuntimeConfigFile from a ControllerConfig 
 
-  migrator convert -i my-controllerconfig.yaml -o my-drconfig.yaml
+  crossplane-migrator new-deployment-runtime -i examples/enable-flags.yaml -o my-drconfig.yaml
 
   # Create a new DeploymentRuntimeConfigFile via Stdout
 
-  migrator convert -i cc.yaml | grep -v creationTimestamp | kubectl apply -f - 
+  crossplane-migrator new-deployment-runtime -i cc.yaml | grep -v creationTimestamp | kubectl apply -f - 
 
 `
 }
 
 func (c *Cmd) Run() error {
-	if c.InputFile == "" {
-		os.Stderr.Write([]byte(c.Help()))
-		return errors.New("no input file")
+	var data []byte
+	var err error
+
+	if c.InputFile != "" {
+		data, err = os.ReadFile(c.InputFile)
+	} else {
+		data, err = io.ReadAll(os.Stdin)
+	}
+	if err != nil {
+		return errors.Wrap(err, "Unable to read input")
 	}
 
 	// Set up schemes for our API types
@@ -73,12 +80,6 @@ func (c *Cmd) Run() error {
 	_ = v1beta1.AddToScheme(sch)
 
 	decode := serializer.NewCodecFactory(sch).UniversalDeserializer().Decode
-
-	data, err := os.ReadFile(c.InputFile)
-	if err != nil {
-		return err
-		//return errors.Errorf("unable to read ControllerConfig %s: %s", c.InputFile, err)
-	}
 
 	cc := &v1alpha1.ControllerConfig{}
 	_, _, err = decode(data, &v1alpha1.ControllerConfigGroupVersionKind, cc)
@@ -99,7 +100,7 @@ func (c *Cmd) Run() error {
 	if c.OutputFile != "" {
 		f, err := os.OpenFile(c.OutputFile, os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
-			panic(err)
+			return errors.Wrap(err, "Unable to open output file")
 		}
 		defer f.Close()
 		output = f
@@ -109,7 +110,7 @@ func (c *Cmd) Run() error {
 
 	err = s.Encode(drc, output)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Unable to encode output")
 	}
 	return nil
 }

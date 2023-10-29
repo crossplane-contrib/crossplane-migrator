@@ -64,38 +64,6 @@ func NewPipelineCompositionFromExisting(c *v1.Composition, functionRefName strin
 	return cp, nil
 }
 
-// Transforms require a type to be defined
-func VerifyTransforms(tf []v1.Transform) []v1.Transform {
-	vtf := []v1.Transform{}
-	for _, t := range tf {
-		vtf = append(vtf, SetTransformTypeRequiredFields(t))
-	}
-
-	return vtf
-}
-
-// ConnectionSecrets require a name and kind
-func VerifyConnectionSecrets() {}
-
-// Configure Pipeline Step
-func WithStepName(name string) func(*v1.PipelineStep) {
-	return func(ps *v1.PipelineStep) {
-		ps.Step = name
-	}
-}
-
-func WithFunctionReference(name string) func(*v1.PipelineStep) {
-	return func(ps *v1.PipelineStep) {
-		ps.FunctionRef = v1.FunctionReference{Name: name}
-	}
-}
-
-func WithInput(input *runtime.RawExtension) func(*v1.PipelineStep) {
-	return func(ps *v1.PipelineStep) {
-		ps.Input = input
-	}
-}
-
 // Configure Input Function. Since we are migrating legacy Patch & Transform, we convert to
 func NewPatchAndTransformFunctionInput(input *Input) *runtime.RawExtension {
 
