@@ -34,7 +34,7 @@ var cli struct {
 func main() {
 	logger := logging.NewNopLogger()
 	ctx := kong.Parse(&cli,
-		kong.Name("crossplane-migrate"),
+		kong.Name("crossplane-migrator"),
 		kong.Description("Crossplane migration utilities"),
 		// Binding a variable to kong context makes it available to all commands
 		// at runtime.

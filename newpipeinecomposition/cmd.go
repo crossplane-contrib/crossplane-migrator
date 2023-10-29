@@ -17,7 +17,6 @@ limitations under the License.
 package newpipeinecomposition
 
 import (
-	"fmt"
 	"io"
 	"os"
 
@@ -84,8 +83,7 @@ func (c *Cmd) Run() error {
 	oc := &v1.Composition{}
 	_, _, err = decode(data, &v1.CompositionGroupVersionKind, oc)
 	if err != nil {
-		fmt.Println("Decode error")
-		return err
+		return errors.Wrap(err, "Decoding Error")
 	}
 
 	_, errs := oc.Validate()
@@ -95,7 +93,7 @@ func (c *Cmd) Run() error {
 
 	pc, err := NewPipelineCompositionFromExisting(oc, c.FunctionName)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Error generating new Composition")
 	}
 
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
@@ -105,7 +103,7 @@ func (c *Cmd) Run() error {
 	if c.OutputFile != "" {
 		f, err := os.OpenFile(c.OutputFile, os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
-			panic(err)
+			return errors.Wrap(err, "Unable to open output file")
 		}
 		defer f.Close()
 		output = f
@@ -115,8 +113,7 @@ func (c *Cmd) Run() error {
 
 	err = s.Encode(pc, output)
 	if err != nil {
-		return err
+		errors.Wrap(err, "Unable to encode output")
 	}
 	return nil
-
 }

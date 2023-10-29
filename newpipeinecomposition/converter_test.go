@@ -5,6 +5,8 @@ import (
 
 	v1 "github.com/crossplane/crossplane/apis/apiextensions/v1"
 	"github.com/google/go-cmp/cmp"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestSetMissingConnectionDetailFields(t *testing.T) {
@@ -85,7 +87,9 @@ func TestSetMissingConnectionDetailFields(t *testing.T) {
 }
 
 func TestSetTransformTypeRequiredFields(t *testing.T) {
+	group := int(1)
 	mult := int64(1024)
+	tobase64 := v1.StringConversionTypeToBase64
 	type args struct {
 		tt v1.Transform
 	}
@@ -98,7 +102,7 @@ func TestSetTransformTypeRequiredFields(t *testing.T) {
 		args   args
 		want   want
 	}{
-		"MathMissingTYpe": {
+		"MathMultiplyMissingType": {
 			reason: "Correctly add Type and Name",
 			args: args{
 				tt: v1.Transform{
@@ -109,6 +113,84 @@ func TestSetTransformTypeRequiredFields(t *testing.T) {
 				tt: v1.Transform{
 					Type: v1.TransformTypeMath,
 					Math: &v1.MathTransform{Multiply: &mult, Type: v1.MathTransformTypeMultiply},
+				},
+			},
+		},
+		"MathClampMinMissingType": {
+			reason: "Correctly add Type and Name",
+			args: args{
+				tt: v1.Transform{
+					Math: &v1.MathTransform{ClampMin: &mult},
+				},
+			},
+			want: want{
+				tt: v1.Transform{
+					Type: v1.TransformTypeMath,
+					Math: &v1.MathTransform{
+						ClampMin: &mult,
+						Type:     v1.MathTransformTypeClampMin,
+					},
+				},
+			},
+		},
+		"MathClampMaxMissingType": {
+			reason: "Correctly add Type and Name",
+			args: args{
+				tt: v1.Transform{
+					Math: &v1.MathTransform{ClampMax: &mult},
+				},
+			},
+			want: want{
+				tt: v1.Transform{
+					Type: v1.TransformTypeMath,
+					Math: &v1.MathTransform{
+						ClampMax: &mult,
+						Type:     v1.MathTransformTypeClampMax,
+					},
+				},
+			},
+		},
+		"StringConvertMissingType": {
+			reason: "Correctly add Type and Name",
+			args: args{
+				tt: v1.Transform{
+					String: &v1.StringTransform{
+						Convert: &tobase64,
+					},
+				},
+			},
+			want: want{
+				tt: v1.Transform{
+					Type: v1.TransformTypeString,
+					String: &v1.StringTransform{
+						Type:    v1.StringTransformTypeConvert,
+						Convert: &tobase64,
+					},
+				},
+			},
+		},
+		"StringRegexMissingType": {
+			reason: "Correctly add Type and Name",
+			args: args{
+				tt: v1.Transform{
+					String: &v1.StringTransform{
+						Regexp: &v1.StringTransformRegexp{
+							Match: "'^eu-(.*)-'",
+							Group: &group,
+						},
+					},
+				},
+			},
+			want: want{
+				tt: v1.Transform{
+					Type: v1.TransformTypeString,
+					String: &v1.StringTransform{
+						Type: v1.StringTransformTypeRegexp,
+						Regexp: &v1.StringTransformRegexp{
+							Match: "'^eu-(.*)-'",
+							Group: &group,
+						},
+					},
 				},
 			},
 		},
@@ -132,4 +214,211 @@ func EquateErrors() cmp.Option {
 		}
 		return a.Error() == b.Error()
 	})
+}
+
+func TestNewPatchAndTransformFunctionInput(t *testing.T) {
+	emptyInput := &Input{}
+	type args struct {
+		input *Input
+	}
+	cases := map[string]struct {
+		reason string
+		args   args
+		want   *runtime.RawExtension
+	}{
+		"EmptyInput": {
+			reason: "EmptyInput will generate GVK",
+			args: args{
+				input: emptyInput,
+			},
+			want: &runtime.RawExtension{
+				Object: &unstructured.Unstructured{
+					Object: map[string]any{
+						"apiVersion": string("pt.fn.crossplane.io/v1beta1"),
+						"kind":       string("Resources"),
+						"resources": map[string]any{
+							"environment": (*v1.EnvironmentConfiguration)(nil),
+							"patchSets":   []v1.PatchSet{},
+							"resources":   []v1.ComposedTemplate{},
+						},
+					},
+				},
+			},
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got := NewPatchAndTransformFunctionInput(tc.args.input)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Errorf("%s\nNewPatchAndTransformFunctionInput(...): -want i, +got i:\n%s", tc.reason, diff)
+			}
+		})
+	}
+}
+
+func TestSetMissingPatchSetFields(t *testing.T) {
+	fieldPath := "spec.id"
+	stringFmt := "test-%s"
+	intp := int64(1010)
+	type args struct {
+		patchSet v1.PatchSet
+	}
+	cases := map[string]struct {
+		reason string
+		args   args
+		want   v1.PatchSet
+	}{
+		"TransformArrayMissingFields": {
+			reason: "Nested missing Types are filled in for a transform array",
+			args: args{
+				v1.PatchSet{
+					Name: "test-patchset",
+					Patches: []v1.Patch{
+						{
+							Type:          v1.PatchTypeFromCompositeFieldPath,
+							FromFieldPath: &fieldPath,
+							ToFieldPath:   &fieldPath,
+							Transforms: []v1.Transform{
+								{
+									String: &v1.StringTransform{
+										Format: &stringFmt,
+									},
+								},
+								{
+									Math: &v1.MathTransform{
+										Multiply: &intp,
+									},
+								},
+							},
+						},
+						{
+							Type:          v1.PatchTypeCombineFromComposite,
+							FromFieldPath: &fieldPath,
+							ToFieldPath:   &fieldPath,
+						},
+					},
+				},
+			},
+			want: v1.PatchSet{
+				Name: "test-patchset",
+				Patches: []v1.Patch{
+					{
+						Type:          v1.PatchTypeFromCompositeFieldPath,
+						FromFieldPath: &fieldPath,
+						ToFieldPath:   &fieldPath,
+						Transforms: []v1.Transform{
+							{
+								Type: v1.TransformTypeString,
+								String: &v1.StringTransform{
+									Type:   v1.StringTransformTypeFormat,
+									Format: &stringFmt,
+								},
+							},
+							{
+								Type: v1.TransformTypeMath,
+								Math: &v1.MathTransform{
+									Type:     v1.MathTransformTypeMultiply,
+									Multiply: &intp,
+								},
+							},
+						},
+					},
+					{
+						Type:          v1.PatchTypeCombineFromComposite,
+						FromFieldPath: &fieldPath,
+						ToFieldPath:   &fieldPath,
+					},
+				},
+			},
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got := SetMissingPatchSetFields(tc.args.patchSet)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Errorf("%s\nNewSetMissingPatchFields(...): -want i, +got i:\n%s", tc.reason, diff)
+			}
+
+		})
+	}
+}
+
+func TestSetMissingPatchFields(t *testing.T) {
+	fieldPath := "spec.id"
+	stringFmt := "test-%s"
+	intp := int64(1010)
+	type args struct {
+		patch v1.Patch
+	}
+	cases := map[string]struct {
+		reason string
+		args   args
+		want   v1.Patch
+	}{
+		"PatchWithoutTransforms": {
+			args: args{
+				v1.Patch{
+					Type:          v1.PatchTypeCombineFromComposite,
+					FromFieldPath: &fieldPath,
+					ToFieldPath:   &fieldPath,
+				},
+			},
+			want: v1.Patch{
+				Type:          v1.PatchTypeCombineFromComposite,
+				FromFieldPath: &fieldPath,
+				ToFieldPath:   &fieldPath,
+			}},
+		"TransformArrayMissingFields": {
+			reason: "Nested missing Types are filled in for a transform array",
+			args: args{
+				v1.Patch{
+					Type:          v1.PatchTypeFromCompositeFieldPath,
+					FromFieldPath: &fieldPath,
+					ToFieldPath:   &fieldPath,
+					Transforms: []v1.Transform{
+						{
+							String: &v1.StringTransform{
+								Format: &stringFmt,
+							},
+						},
+						{
+							Math: &v1.MathTransform{
+								Multiply: &intp,
+							},
+						},
+					},
+				},
+			},
+			want: v1.Patch{
+				Type:          v1.PatchTypeFromCompositeFieldPath,
+				FromFieldPath: &fieldPath,
+				ToFieldPath:   &fieldPath,
+				Transforms: []v1.Transform{
+					{
+						Type: v1.TransformTypeString,
+						String: &v1.StringTransform{
+							Type:   v1.StringTransformTypeFormat,
+							Format: &stringFmt,
+						},
+					},
+					{
+						Type: v1.TransformTypeMath,
+						Math: &v1.MathTransform{
+							Type:     v1.MathTransformTypeMultiply,
+							Multiply: &intp,
+						},
+					},
+				},
+			},
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got := SetMissingPatchFields(tc.args.patch)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Errorf("%s\nNewSetMissingPatchFields(...): -want i, +got i:\n%s", tc.reason, diff)
+			}
+
+		})
+	}
 }
