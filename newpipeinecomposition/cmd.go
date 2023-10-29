@@ -17,14 +17,13 @@ limitations under the License.
 package newpipeinecomposition
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
 
+	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes/scheme"
 
-	compositionv1 "github.com/crossplane/crossplane/apis/apiextensions/v1"
 	v1 "github.com/crossplane/crossplane/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -37,7 +36,7 @@ type Cmd struct {
 	InputFile string `short:"i" type:"path" placeholder:"PATH" help:"The Composition file to be converted."`
 
 	OutputFile   string `short:"o" type:"path" placeholder:"PATH" help:"The file to write the generated Composition to."`
-	FunctionName string `short:"f" type:"string" placeholder:"PATH" help:"FunctionRef. Defaults to function-patch-and-transform."`
+	FunctionName string `short:"f" type:"string" placeholder:"STRING" help:"FunctionRefName. Defaults to function-patch-and-transform."`
 }
 
 func (c *Cmd) Help() string {
@@ -47,41 +46,51 @@ This command converts a Crossplane Composition to use a Composition function pip
 
 Examples:
 
-  # Write out a DeploymentRuntimeConfigFile from a ControllerConfig 
+  # Convert an existing Composition to use Pipelines
 
-  migrator compositiontofunction -i composition.yaml -o new-composition.yaml
+  crossplane-migrator new-pipeline-composition -i composition.yaml -o new-composition.yaml
 
   # Use a different functionRef and output to stdout
 
-  migrator compositiontofunction -i composition.yaml -f local-function-patch-and-transform
+  crossplane-migrator new-pipeline-composition -i composition.yaml -f local-function-patch-and-transform
+
+  # Stdin to stdout
+
+  cat composition.yaml | ./crossplane-migrator new-pipeline-composition 
 
 `
 }
 
 func (c *Cmd) Run() error {
-	if c.InputFile == "" {
-		os.Stderr.Write([]byte(c.Help()))
-		return errors.New("no input file")
+	var data []byte
+	var err error
+
+	if c.InputFile != "" {
+		data, err = os.ReadFile(c.InputFile)
+	} else {
+		data, err = io.ReadAll(os.Stdin)
+	}
+	if err != nil {
+		return errors.Wrap(err, "Unable to read input")
 	}
 
 	// Set up schemes for our API types
 	sch := runtime.NewScheme()
 	_ = scheme.AddToScheme(sch)
-	_ = compositionv1.AddToScheme(sch)
+	_ = v1.AddToScheme(sch)
 
 	decode := serializer.NewCodecFactory(sch).UniversalDeserializer().Decode
-
-	data, err := os.ReadFile(c.InputFile)
-	if err != nil {
-		return err
-		//return errors.Errorf("unable to read ControllerConfig %s: %s", c.InputFile, err)
-	}
 
 	oc := &v1.Composition{}
 	_, _, err = decode(data, &v1.CompositionGroupVersionKind, oc)
 	if err != nil {
 		fmt.Println("Decode error")
 		return err
+	}
+
+	_, errs := oc.Validate()
+	if len(errs) > 0 {
+		return errors.Wrap(errs.ToAggregate(), "Existing Composition Validation error")
 	}
 
 	pc, err := NewPipelineCompositionFromExisting(oc, c.FunctionName)

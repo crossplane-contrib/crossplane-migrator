@@ -72,6 +72,8 @@ spec:
 
 ### Migrating Existing Compositions to use Pipelines
 
+[function-patch-and-transform](https://github.com/crossplane-contrib/function-patch-and-transform) runs Crossplane's built-in Patch&Transform engine in a function pipeline. This utility can migrate existing compositions to run in a pipeline:
+
 ```console
 ./crossplane-migrator new-pipeline-composition -i composition.yaml -o composition-pipeline.yaml
 ```
