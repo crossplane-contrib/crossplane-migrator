@@ -18,6 +18,7 @@ package main
 
 import (
 	"github.com/alecthomas/kong"
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
 
 	"github.com/stevendborrelli/crossplane-migrator/newdeploymentconfig"
 	"github.com/stevendborrelli/crossplane-migrator/newpipeinecomposition"
@@ -31,14 +32,13 @@ var cli struct {
 }
 
 func main() {
-	//logger := logging.NewNopLogger()
+	logger := logging.NewNopLogger()
 	ctx := kong.Parse(&cli,
 		kong.Name("crossplane-migrate"),
 		kong.Description("Crossplane migration utilities"),
 		// Binding a variable to kong context makes it available to all commands
 		// at runtime.
-		//kong.BindTo(logger, (logging.Logger)(nil)),
-		//kong.Bind(logger),
+		kong.BindTo(logger, (*logging.Logger)(nil)),
 		kong.ConfigureHelp(kong.HelpOptions{
 			FlagsLast:      true,
 			Compact:        true,

@@ -52,6 +52,7 @@ func NewPipelineCompositionFromExisting(c *v1.Composition, functionRefName strin
 
 	// Set up the pipeline
 	cp.Spec.Mode = &pipelineMode
+
 	ni := NewPatchAndTransformFunctionInput(input)
 	cp.Spec.Pipeline = []v1.PipelineStep{
 		{
@@ -151,7 +152,6 @@ func SetMissingPatchFields(patch v1.Patch) v1.Patch {
 	for _, transform := range patch.Transforms {
 		t = append(t, SetTransformTypeRequiredFields(transform))
 	}
-
 	patch.Transforms = t
 	return patch
 }
@@ -168,6 +168,7 @@ func SetMissingResourceFields(rs v1.ComposedTemplate) v1.ComposedTemplate {
 	for _, patch := range rs.Patches {
 		patches = append(patches, SetMissingPatchFields(patch))
 	}
+	rs.Patches = patches
 	return rs
 }
 
