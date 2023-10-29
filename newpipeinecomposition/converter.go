@@ -1,8 +1,6 @@
 package newpipeinecomposition
 
 import (
-	"fmt"
-
 	v1 "github.com/crossplane/crossplane/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -80,10 +78,12 @@ func NewPatchAndTransformFunctionInput(input *Input) *runtime.RawExtension {
 			"resources":   pi.Resources,
 		},
 	}
-	ui := &unstructured.Unstructured{Object: inputType}
-	ret := &runtime.RawExtension{Object: ui}
+	// ui := &unstructured.Unstructured{Object: inputType}
+	// ret := &runtime.RawExtension{Object: ui}
 
-	return ret
+	return &runtime.RawExtension{
+		Object: &unstructured.Unstructured{Object: inputType},
+	}
 }
 
 func SetMissingInputFields(input *Input) *Input {
@@ -116,6 +116,9 @@ func SetMissingPatchSetFields(patchSet v1.PatchSet) v1.PatchSet {
 }
 
 func SetMissingPatchFields(patch v1.Patch) v1.Patch {
+	if len(patch.Transforms) == 0 {
+		return patch
+	}
 	t := []v1.Transform{}
 	for _, transform := range patch.Transforms {
 		t = append(t, SetTransformTypeRequiredFields(transform))
@@ -190,10 +193,7 @@ func SetTransformTypeRequiredFields(tt v1.Transform) v1.Transform {
 			tt.Math.Type = v1.MathTransformTypeMultiply
 		}
 	}
-	err := tt.Validate()
-	if err != nil {
-		fmt.Println("ERROR", err)
-	}
+
 	if tt.Type == v1.TransformTypeString && tt.String.Type == "" {
 		if tt.String.Format != nil {
 			tt.String.Type = v1.StringTransformTypeFormat

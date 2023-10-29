@@ -244,7 +244,7 @@ func TestControllerConfigToRuntimeDeploymentConfig(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			dr, err := ControllerConfigToRuntimeDeploymentConfig(tc.args.cc)
+			dr, err := ControllerConfigToDeploymentRuntimeConfig(tc.args.cc)
 			if diff := cmp.Diff(tc.want.dr, dr); diff != "" {
 				t.Errorf("%s\nControllerConfigToRuntimeDeploymentConfig(...): -want i, +got i:\n%s", tc.reason, diff)
 			}

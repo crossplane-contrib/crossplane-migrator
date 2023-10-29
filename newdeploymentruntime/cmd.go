@@ -17,7 +17,6 @@ limitations under the License.
 package newdeploymentruntime
 
 import (
-	"fmt"
 	"io"
 	"os"
 
@@ -84,13 +83,12 @@ func (c *Cmd) Run() error {
 	cc := &v1alpha1.ControllerConfig{}
 	_, _, err = decode(data, &v1alpha1.ControllerConfigGroupVersionKind, cc)
 	if err != nil {
-		fmt.Println("Decode error")
-		return err
+		return errors.Wrap(err, "Decode Error")
 	}
 
-	drc, err := ControllerConfigToRuntimeDeploymentConfig(cc)
+	drc, err := ControllerConfigToDeploymentRuntimeConfig(cc)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Cannot migrate to Deployment Runtime")
 	}
 
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)

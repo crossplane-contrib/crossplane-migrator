@@ -16,7 +16,7 @@ const (
 	ErrNilControllerConfig = "ControllerConfig is nil"
 )
 
-func ControllerConfigToRuntimeDeploymentConfig(cc *v1alpha1.ControllerConfig) (*v1beta1.DeploymentRuntimeConfig, error) {
+func ControllerConfigToDeploymentRuntimeConfig(cc *v1alpha1.ControllerConfig) (*v1beta1.DeploymentRuntimeConfig, error) {
 	if cc == nil {
 		return nil, errors.New(ErrNilControllerConfig)
 	}
