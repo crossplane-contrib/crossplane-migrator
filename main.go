@@ -27,7 +27,7 @@ import (
 var _ = kong.Must(&cli)
 
 var cli struct {
-	NewDeploymentConfig    newdeploymentconfig.Cmd   `cmd:"" help:"Convert deprecated ControllerConfigs to DeploymentRuntimeConfigs."`
+	NewDeploymentRuntime   newdeploymentconfig.Cmd   `cmd:"" help:"Convert deprecated ControllerConfigs to DeploymentRuntimeConfigs."`
 	NewPipelineComposition newpipeinecomposition.Cmd `cmd:"" help:"Convert Compositions to Composition Pipelines with function-patch-and-transform."`
 }
 
