@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/alecthomas/kong v0.8.1
 	github.com/crossplane/crossplane v1.15.0-rc.0.0.20231026111239-35b34e85feb7
+	github.com/crossplane/crossplane-runtime v1.15.0-rc.0
 	github.com/google/go-cmp v0.6.0
 	k8s.io/api v0.28.3
 	k8s.io/apimachinery v0.28.3
@@ -13,7 +14,6 @@ require (
 
 require (
 	dario.cat/mergo v1.0.0 // indirect
-	github.com/crossplane/crossplane-runtime v1.15.0-rc.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect

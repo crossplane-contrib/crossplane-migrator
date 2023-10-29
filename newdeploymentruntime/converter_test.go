@@ -1,4 +1,4 @@
-package newdeploymentconfig
+package newdeploymentruntime
 
 import (
 	"errors"

@@ -20,14 +20,14 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 
-	"github.com/stevendborrelli/crossplane-migrator/newdeploymentconfig"
+	"github.com/stevendborrelli/crossplane-migrator/newdeploymentruntime"
 	"github.com/stevendborrelli/crossplane-migrator/newpipeinecomposition"
 )
 
 var _ = kong.Must(&cli)
 
 var cli struct {
-	NewDeploymentRuntime   newdeploymentconfig.Cmd   `cmd:"" help:"Convert deprecated ControllerConfigs to DeploymentRuntimeConfigs."`
+	NewDeploymentRuntime   newdeploymentruntime.Cmd  `cmd:"" help:"Convert deprecated ControllerConfigs to DeploymentRuntimeConfigs."`
 	NewPipelineComposition newpipeinecomposition.Cmd `cmd:"" help:"Convert Compositions to Composition Pipelines with function-patch-and-transform."`
 }
 
