@@ -1,4 +1,4 @@
-package convert
+package newdeploymentconfig
 
 import (
 	"errors"
@@ -90,7 +90,7 @@ func TestNewDeploymentTemplateFromControllerConfig(t *testing.T) {
 					},
 					Spec: &v1.DeploymentSpec{
 						Replicas: &replicas,
-
+						Selector: &metav1.LabelSelector{},
 						Template: corev1.PodTemplateSpec{
 							ObjectMeta: metav1.ObjectMeta{
 								Labels: map[string]string{},
@@ -182,6 +182,10 @@ func TestControllerConfigToRuntimeDeploymentConfig(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
 					},
+					TypeMeta: metav1.TypeMeta{
+						Kind:       v1beta1.DeploymentRuntimeConfigKind,
+						APIVersion: v1beta1.Group + "/" + v1beta1.Version,
+					},
 				},
 				err: nil,
 			},
@@ -202,6 +206,10 @@ func TestControllerConfigToRuntimeDeploymentConfig(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
 					},
+					TypeMeta: metav1.TypeMeta{
+						Kind:       v1beta1.DeploymentRuntimeConfigKind,
+						APIVersion: v1beta1.Group + "/" + v1beta1.Version,
+					},
 					Spec: v1beta1.DeploymentRuntimeConfigSpec{
 						ServiceTemplate: &v1beta1.ServiceTemplate{
 							Metadata: &v1beta1.ObjectMeta{
@@ -221,9 +229,11 @@ func TestControllerConfigToRuntimeDeploymentConfig(t *testing.T) {
 								Annotations: map[string]string{"crossplane": "rocks"},
 								Labels:      map[string]string{"a": "b"},
 							},
-							Spec: &v1.DeploymentSpec{Template: corev1.PodTemplateSpec{
-								ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{}},
-							}},
+							Spec: &v1.DeploymentSpec{
+								Selector: &metav1.LabelSelector{},
+								Template: corev1.PodTemplateSpec{
+									ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{}},
+								}},
 						},
 					},
 				},

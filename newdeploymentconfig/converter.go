@@ -1,4 +1,4 @@
-package convert
+package newdeploymentconfig
 
 import (
 	"errors"

@@ -19,20 +19,22 @@ package main
 import (
 	"github.com/alecthomas/kong"
 
-	"github.com/stevendborrelli/ControllerConfig-migrator/convert"
+	"github.com/stevendborrelli/crossplane-migrator/newdeploymentconfig"
+	"github.com/stevendborrelli/crossplane-migrator/newpipeinecomposition"
 )
 
 var _ = kong.Must(&cli)
 
 var cli struct {
-	Convert convert.Cmd `cmd:"" help:"Convert ControllerConfigs to DeploymentRuntimeConfigs."`
+	NewDeploymentConfig    newdeploymentconfig.Cmd   `cmd:"" help:"Convert deprecated ControllerConfigs to DeploymentRuntimeConfigs."`
+	NewPipelineComposition newpipeinecomposition.Cmd `cmd:"" help:"Convert Compositions to Composition Pipelines with function-patch-and-transform."`
 }
 
 func main() {
 	//logger := logging.NewNopLogger()
 	ctx := kong.Parse(&cli,
-		kong.Name("convert"),
-		kong.Description("Convert ControllerConfigs to DeploymentRuntimeConfigs"),
+		kong.Name("crossplane-migrate"),
+		kong.Description("Crossplane migration utilities"),
 		// Binding a variable to kong context makes it available to all commands
 		// at runtime.
 		//kong.BindTo(logger, (logging.Logger)(nil)),
