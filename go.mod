@@ -1,4 +1,4 @@
-module github.com/stevendborrelli/crossplane-migrator
+module github.com/crossplane-contrib/crossplane-migrator
 
 go 1.20
 

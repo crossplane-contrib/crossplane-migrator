@@ -20,8 +20,8 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 
-	"github.com/stevendborrelli/crossplane-migrator/newdeploymentruntime"
-	"github.com/stevendborrelli/crossplane-migrator/newpipeinecomposition"
+	"github.com/crossplane-contrib/crossplane-migrator/newdeploymentruntime"
+	"github.com/crossplane-contrib/crossplane-migrator/newpipeinecomposition"
 )
 
 var _ = kong.Must(&cli)

@@ -18,7 +18,7 @@ This utility is proposed to be added to the Crossplane CLI in [1.15](https://git
 ## Installing
 
 ```shell
-go install github.com/stevendborrelli/crossplane-migrator@latest
+go install github.com/crossplane-contrib/crossplane-migrator@latest
 ```
 
 ## Example Use
