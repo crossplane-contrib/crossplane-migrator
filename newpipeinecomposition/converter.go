@@ -1,6 +1,9 @@
 package newpipeinecomposition
 
 import (
+	"fmt"
+	"strings"
+
 	v1 "github.com/crossplane/crossplane/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -70,16 +73,12 @@ func NewPatchAndTransformFunctionInput(input *Input) *runtime.RawExtension {
 	pi := SetMissingInputFields(input)
 
 	var inputType = map[string]any{
-		"apiVersion": "pt.fn.crossplane.io/v1beta1",
-		"kind":       "Resources",
-		"resources": map[string]any{
-			"environment": pi.Environment,
-			"patchSets":   pi.PatchSets,
-			"resources":   pi.Resources,
-		},
+		"apiVersion":  "pt.fn.crossplane.io/v1beta1",
+		"kind":        "Resources",
+		"environment": pi.Environment,
+		"patchSets":   pi.PatchSets,
+		"resources":   pi.Resources,
 	}
-	// ui := &unstructured.Unstructured{Object: inputType}
-	// ret := &runtime.RawExtension{Object: ui}
 
 	return &runtime.RawExtension{
 		Object: &unstructured.Unstructured{Object: inputType},
@@ -98,8 +97,8 @@ func SetMissingInputFields(input *Input) *Input {
 	processedInput.PatchSets = processedPatchSet
 
 	processedResources := []v1.ComposedTemplate{}
-	for _, resource := range input.Resources {
-		processedResources = append(processedResources, SetMissingResourceFields(resource))
+	for idx, resource := range input.Resources {
+		processedResources = append(processedResources, SetMissingResourceFields(idx, resource))
 	}
 	processedInput.Resources = processedResources
 
@@ -127,9 +126,14 @@ func SetMissingPatchFields(patch v1.Patch) v1.Patch {
 	return patch
 }
 
-func SetMissingResourceFields(rs v1.ComposedTemplate) v1.ComposedTemplate {
-	cd := []v1.ConnectionDetail{}
+func SetMissingResourceFields(idx int, rs v1.ComposedTemplate) v1.ComposedTemplate {
+	if emptyString(rs.Name) {
+		kind := rs.Base.Object.GetObjectKind().GroupVersionKind().Kind
+		n := strings.ToLower(fmt.Sprintf("%s-%d", kind, idx))
+		rs.Name = &n
+	}
 
+	cd := []v1.ConnectionDetail{}
 	for _, detail := range rs.ConnectionDetails {
 		cd = append(cd, SetMissingConnectionDetailFields(detail))
 	}
@@ -141,6 +145,14 @@ func SetMissingResourceFields(rs v1.ComposedTemplate) v1.ComposedTemplate {
 	}
 	rs.Patches = patches
 	return rs
+}
+
+func emptyString(s *string) bool {
+	if s == nil {
+		return true
+	}
+
+	return *s == ""
 }
 
 // This struct is copied from function patch and transform

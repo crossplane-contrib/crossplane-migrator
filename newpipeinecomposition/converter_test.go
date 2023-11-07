@@ -234,13 +234,11 @@ func TestNewPatchAndTransformFunctionInput(t *testing.T) {
 			want: &runtime.RawExtension{
 				Object: &unstructured.Unstructured{
 					Object: map[string]any{
-						"apiVersion": string("pt.fn.crossplane.io/v1beta1"),
-						"kind":       string("Resources"),
-						"resources": map[string]any{
-							"environment": (*v1.EnvironmentConfiguration)(nil),
-							"patchSets":   []v1.PatchSet{},
-							"resources":   []v1.ComposedTemplate{},
-						},
+						"apiVersion":  string("pt.fn.crossplane.io/v1beta1"),
+						"kind":        string("Resources"),
+						"environment": (*v1.EnvironmentConfiguration)(nil),
+						"patchSets":   []v1.PatchSet{},
+						"resources":   []v1.ComposedTemplate{},
 					},
 				},
 			},
@@ -418,7 +416,144 @@ func TestSetMissingPatchFields(t *testing.T) {
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Errorf("%s\nNewSetMissingPatchFields(...): -want i, +got i:\n%s", tc.reason, diff)
 			}
+		})
+	}
+}
 
+func Test_emptyString(t *testing.T) {
+	empty := ""
+	nonEmpty := "xp"
+	type args struct {
+		s *string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "nil string",
+			args: args{},
+			want: true,
+		},
+		{
+			name: "empty string",
+			args: args{s: &empty},
+			want: true,
+		},
+		{
+			name: "nonEmpty string",
+			args: args{s: &nonEmpty},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := emptyString(tt.args.s); got != tt.want {
+				t.Errorf("emptyString() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSetMissingResourceFields(t *testing.T) {
+	name := "testresource-0"
+	empty := ""
+	str := "crossplane"
+	fcsk := v1.ConnectionDetailTypeFromConnectionSecretKey
+	var baseNoName = map[string]any{
+		"apiVersion": "nop.crossplane.io/v1",
+		"kind":       "TestResource",
+		"spec":       map[string]any{},
+	}
+
+	type args struct {
+		idx int
+		rs  v1.ComposedTemplate
+	}
+	cases := map[string]struct {
+		reason string
+		args   args
+		want   v1.ComposedTemplate
+	}{
+		"NoNameProvided": {
+			reason: "ResourceName Not provided",
+			args: args{
+				rs: v1.ComposedTemplate{
+					Base: runtime.RawExtension{
+						Object: &unstructured.Unstructured{Object: baseNoName},
+					},
+					Patches:           []v1.Patch{},
+					ConnectionDetails: []v1.ConnectionDetail{},
+				},
+			},
+			want: v1.ComposedTemplate{
+				Name: &name,
+				Base: runtime.RawExtension{
+					Object: &unstructured.Unstructured{Object: baseNoName},
+				},
+				Patches:           []v1.Patch{},
+				ConnectionDetails: []v1.ConnectionDetail{},
+			},
+		},
+		"EmptyNameProvided": {
+			reason: "ResourceName Not provided",
+			args: args{
+				rs: v1.ComposedTemplate{
+					Name: &empty,
+					Base: runtime.RawExtension{
+						Object: &unstructured.Unstructured{Object: baseNoName},
+					},
+					Patches:           []v1.Patch{},
+					ConnectionDetails: []v1.ConnectionDetail{},
+				},
+			},
+			want: v1.ComposedTemplate{
+				Name: &name,
+				Base: runtime.RawExtension{
+					Object: &unstructured.Unstructured{Object: baseNoName},
+				},
+				Patches:           []v1.Patch{},
+				ConnectionDetails: []v1.ConnectionDetail{},
+			},
+		},
+		"NameProvidedWithConnectionDetail": {
+			reason: "ResourceName Not provided",
+			args: args{
+				rs: v1.ComposedTemplate{
+					Name: &name,
+					Base: runtime.RawExtension{
+						Object: &unstructured.Unstructured{Object: baseNoName},
+					},
+					Patches: []v1.Patch{},
+					ConnectionDetails: []v1.ConnectionDetail{
+						{FromConnectionSecretKey: &str},
+					},
+				},
+			},
+			want: v1.ComposedTemplate{
+				Name: &name,
+				Base: runtime.RawExtension{
+					Object: &unstructured.Unstructured{Object: baseNoName},
+				},
+				Patches: []v1.Patch{},
+				ConnectionDetails: []v1.ConnectionDetail{
+					{
+						FromConnectionSecretKey: &str,
+						Type:                    &fcsk,
+						Name:                    &str,
+					},
+				},
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got := SetMissingResourceFields(tc.args.idx, tc.args.rs)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Errorf("%s\nSetMissingResourceFields(...): -want i, +got i:\n%s", tc.reason, diff)
+			}
 		})
 	}
 }
