@@ -152,12 +152,8 @@ func emptyString(s *string) bool {
 	if s == nil {
 		return true
 	}
-	sr := *s
-	if sr == "" {
-		return true
-	}
-	return false
 
+	return *s == ""
 }
 
 // This struct is copied from function patch and transform
