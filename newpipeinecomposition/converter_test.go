@@ -458,6 +458,9 @@ func Test_emptyString(t *testing.T) {
 
 func TestSetMissingResourceFields(t *testing.T) {
 	name := "testresource-0"
+	empty := ""
+	str := "crossplane"
+	fcsk := v1.ConnectionDetailTypeFromConnectionSecretKey
 	var baseNoName = map[string]any{
 		"apiVersion": "nop.crossplane.io/v1",
 		"kind":       "TestResource",
@@ -491,6 +494,56 @@ func TestSetMissingResourceFields(t *testing.T) {
 				},
 				Patches:           []v1.Patch{},
 				ConnectionDetails: []v1.ConnectionDetail{},
+			},
+		},
+		"EmptyNameProvided": {
+			reason: "ResourceName Not provided",
+			args: args{
+				rs: v1.ComposedTemplate{
+					Name: &empty,
+					Base: runtime.RawExtension{
+						Object: &unstructured.Unstructured{Object: baseNoName},
+					},
+					Patches:           []v1.Patch{},
+					ConnectionDetails: []v1.ConnectionDetail{},
+				},
+			},
+			want: v1.ComposedTemplate{
+				Name: &name,
+				Base: runtime.RawExtension{
+					Object: &unstructured.Unstructured{Object: baseNoName},
+				},
+				Patches:           []v1.Patch{},
+				ConnectionDetails: []v1.ConnectionDetail{},
+			},
+		},
+		"NameProvidedWithConnectionDetail": {
+			reason: "ResourceName Not provided",
+			args: args{
+				rs: v1.ComposedTemplate{
+					Name: &name,
+					Base: runtime.RawExtension{
+						Object: &unstructured.Unstructured{Object: baseNoName},
+					},
+					Patches: []v1.Patch{},
+					ConnectionDetails: []v1.ConnectionDetail{
+						{FromConnectionSecretKey: &str},
+					},
+				},
+			},
+			want: v1.ComposedTemplate{
+				Name: &name,
+				Base: runtime.RawExtension{
+					Object: &unstructured.Unstructured{Object: baseNoName},
+				},
+				Patches: []v1.Patch{},
+				ConnectionDetails: []v1.ConnectionDetail{
+					{
+						FromConnectionSecretKey: &str,
+						Type:                    &fcsk,
+						Name:                    &str,
+					},
+				},
 			},
 		},
 	}

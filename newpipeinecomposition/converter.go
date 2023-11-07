@@ -127,14 +127,13 @@ func SetMissingPatchFields(patch v1.Patch) v1.Patch {
 }
 
 func SetMissingResourceFields(idx int, rs v1.ComposedTemplate) v1.ComposedTemplate {
-	cd := []v1.ConnectionDetail{}
-
 	if emptyString(rs.Name) {
 		kind := rs.Base.Object.GetObjectKind().GroupVersionKind().Kind
 		n := strings.ToLower(fmt.Sprintf("%s-%d", kind, idx))
 		rs.Name = &n
 	}
 
+	cd := []v1.ConnectionDetail{}
 	for _, detail := range rs.ConnectionDetails {
 		cd = append(cd, SetMissingConnectionDetailFields(detail))
 	}
