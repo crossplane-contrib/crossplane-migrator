@@ -1,10 +1,17 @@
+
+DOCKER ?= docker
 GO ?= go
 
 PROJECT := crossplane-migrator
 
+GOLANGCI_LINT_VERSION := 1.55.2
+
 build:
 	$(GO) build -o $(PROJECT)
 
+lint:
+	
+	$(DOCKER) run --rm -v $(CURDIR):/app -v ~/.cache/golangci-lint/v$(GOLANGCI_LINT_VERSION):/root/.cache -w /app golangci/golangci-lint:v$(GOLANGCI_LINT_VERSION) golangci-lint run -v
 test: 
 	$(GO) test ./...
 
