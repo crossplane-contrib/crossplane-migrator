@@ -113,7 +113,7 @@ func (c *Cmd) Run() error {
 
 	err = s.Encode(pc, output)
 	if err != nil {
-		errors.Wrap(err, "Unable to encode output")
+		return errors.Wrap(err, "Unable to encode output")
 	}
 	return nil
 }
