@@ -1,0 +1,36 @@
+apiVersion: pkg.crossplane.io/v1alpha1
+kind: ControllerConfig
+metadata:
+  name: controllerconfig-example-2
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::$(account-id):role/$(cross-account-role)
+spec:
+  priorityClassName: critical
+  resources:
+    limits:
+      memory: "5Gi"
+      cpu: 5.0
+    requests:
+      memory: "1024Mi"
+      cpu: 1.5
+  env:
+    - name: GIT_SSH_COMMAND
+      value: ssh -i /data/.ssh/private.pem
+    - name: HTTPS_ENABLED
+      value: "true"
+    - name: GITHUB_SECRET
+      valueFrom:
+        secretKeyRef:
+          key: token
+          name: github-secret
+    - name: LOG_LEVEL
+      value: "1"
+  args:
+    - --debug
+    - --enable-realtime--compositions
+  image: repository.example.com:9001/internal/provider:v0.0.1
+  podSecurityContext:
+    fsGroup: 2000
+  securityContext:
+    runAsUser: 0
+  serviceAccountName: provider-test

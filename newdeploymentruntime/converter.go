@@ -135,6 +135,9 @@ func NewContainerFromControllerConfig(cc *v1alpha1.ControllerConfig) *corev1.Con
 		c.VolumeMounts =
 			append(c.VolumeMounts, cc.Spec.VolumeMounts...)
 	}
+	if cc.Spec.ResourceRequirements != nil {
+		c.Resources = *cc.Spec.ResourceRequirements.DeepCopy()
+	}
 	return c
 }
 
