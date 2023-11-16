@@ -1,10 +1,13 @@
 apiVersion: pkg.crossplane.io/v1alpha1
 kind: ControllerConfig
 metadata:
-  name: enable-flags
+  name: controllerconfig-example-1
   labels:
     app: crossplane-provider-aws
 spec:
+  requests:
+      memory: "1024Mi"
+      cpu: 1.0
   args:
     - -d
     - --enable-external-secret-stores

@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -76,10 +77,20 @@ func TestNewDeploymentTemplateFromControllerConfig(t *testing.T) {
 							RunAsGroup: &user,
 						},
 						PriorityClassName: &className,
-						RuntimeClassName:  &className,
-						Tolerations:       []corev1.Toleration{{Key: "toleration-1"}},
-						Volumes:           []corev1.Volume{{Name: "volume1"}, {Name: "volume2"}},
-						VolumeMounts:      []corev1.VolumeMount{{Name: "mount1", MountPath: "/tmp"}, {Name: "mount2", MountPath: "/etc/ssl/certs"}},
+						ResourceRequirements: &corev1.ResourceRequirements{
+							Limits: map[corev1.ResourceName]resource.Quantity{
+								"cpu":    *resource.NewMilliQuantity(5000, resource.DecimalSI),
+								"memory": *resource.NewQuantity(10*1024*1024*1024, resource.BinarySI),
+							},
+							Requests: map[corev1.ResourceName]resource.Quantity{
+								"cpu":    *resource.NewMilliQuantity(1500, resource.DecimalSI),
+								"memory": *resource.NewQuantity(5*1024*1024*1024, resource.BinarySI),
+							},
+						},
+						RuntimeClassName: &className,
+						Tolerations:      []corev1.Toleration{{Key: "toleration-1"}},
+						Volumes:          []corev1.Volume{{Name: "volume1"}, {Name: "volume2"}},
+						VolumeMounts:     []corev1.VolumeMount{{Name: "mount1", MountPath: "/tmp"}, {Name: "mount2", MountPath: "/etc/ssl/certs"}},
 					},
 				},
 			},
@@ -109,12 +120,23 @@ func TestNewDeploymentTemplateFromControllerConfig(t *testing.T) {
 									},
 								},
 								Containers: []corev1.Container{{
-									Name:         "package-runtime",
-									Args:         []string{"- -d", "- --enable-management-policies"},
-									Image:        image,
+									Name:  "package-runtime",
+									Args:  []string{"- -d", "- --enable-management-policies"},
+									Image: image,
+									Resources: corev1.ResourceRequirements{
+										Limits: map[corev1.ResourceName]resource.Quantity{
+											"cpu":    *resource.NewMilliQuantity(5000, resource.DecimalSI),
+											"memory": *resource.NewQuantity(10*1024*1024*1024, resource.BinarySI),
+										},
+										Requests: map[corev1.ResourceName]resource.Quantity{
+											"cpu":    *resource.NewMilliQuantity(1500, resource.DecimalSI),
+											"memory": *resource.NewQuantity(5*1024*1024*1024, resource.BinarySI),
+										},
+									},
 									VolumeMounts: []corev1.VolumeMount{{Name: "mount1", MountPath: "/tmp"}, {Name: "mount2", MountPath: "/etc/ssl/certs"}},
 								},
 								},
+
 								ImagePullSecrets:   []corev1.LocalObjectReference{{Name: "my-secret"}},
 								NodeSelector:       map[string]string{"node-selector": "foo"},
 								ServiceAccountName: "sa-name",
