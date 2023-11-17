@@ -1,0 +1,56 @@
+apiVersion: pkg.crossplane.io/v1beta1
+kind: DeploymentRuntimeConfig
+metadata:
+  creationTimestamp: null
+  name: controllerconfig-example-2
+spec:
+  deploymentTemplate:
+    metadata:
+      annotations:
+        eks.amazonaws.com/role-arn: arn:aws:iam::$(account-id):role/$(cross-account-role)
+    spec:
+      selector: {}
+      strategy: {}
+      template:
+        metadata:
+          creationTimestamp: null
+        spec:
+          containers:
+          - args:
+            - --debug
+            - --enable-realtime--compositions
+            env:
+            - name: GIT_SSH_COMMAND
+              value: ssh -i /data/.ssh/private.pem
+            - name: HTTPS_ENABLED
+              value: "true"
+            - name: GITHUB_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: token
+                  name: github-secret
+            - name: LOG_LEVEL
+              value: "1"
+            image: repository.example.com:9001/internal/provider:v0.0.1
+            name: package-runtime
+            resources:
+              limits:
+                cpu: "5"
+                memory: 5Gi
+              requests:
+                cpu: 1500m
+                memory: 1Gi
+            securityContext:
+              runAsUser: 0
+          priorityClassName: critical
+          securityContext:
+            fsGroup: 2000
+          serviceAccountName: provider-test
+  serviceAccountTemplate:
+    metadata:
+      annotations:
+        eks.amazonaws.com/role-arn: arn:aws:iam::$(account-id):role/$(cross-account-role)
+  serviceTemplate:
+    metadata:
+      annotations:
+        eks.amazonaws.com/role-arn: arn:aws:iam::$(account-id):role/$(cross-account-role)

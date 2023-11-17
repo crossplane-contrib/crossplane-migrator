@@ -24,7 +24,7 @@ go install github.com/crossplane-contrib/crossplane-migrator@latest
 ## Example Use
 
 ```console
-Usage: crossplane-migrate <command>
+Usage: crossplane-migrator <command>
 
 Crossplane migration utilities
 

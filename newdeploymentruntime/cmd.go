@@ -26,6 +26,7 @@ import (
 	"github.com/crossplane/crossplane/apis/pkg/v1beta1"
 	"github.com/pkg/errors"
 
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -59,7 +60,7 @@ Examples:
 `
 }
 
-func (c *Cmd) Run() error {
+func (c *Cmd) Run(logger logging.Logger) error {
 	var data []byte
 	var err error
 
@@ -85,7 +86,9 @@ func (c *Cmd) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "Decode Error")
 	}
-
+	if cc.Spec.ServiceAccountName != nil && *cc.Spec.ServiceAccountName != "" {
+		logger.Info("WARNING: serviceAccountName is set in the ControllerConfig.\nDeploymentRuntime does not create serviceAccounts, please create the service account separately.", "serviceAccountName", *cc.Spec.ServiceAccountName)
+	}
 	drc, err := ControllerConfigToDeploymentRuntimeConfig(cc)
 	if err != nil {
 		return errors.Wrap(err, "Cannot migrate to Deployment Runtime")
