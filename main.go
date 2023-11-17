@@ -19,6 +19,7 @@ package main
 import (
 	"github.com/alecthomas/kong"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/crossplane-contrib/crossplane-migrator/newdeploymentruntime"
 	"github.com/crossplane-contrib/crossplane-migrator/newpipeinecomposition"
@@ -32,7 +33,7 @@ var cli struct {
 }
 
 func main() {
-	logger := logging.NewNopLogger()
+	logger := logging.NewLogrLogger(zap.New(zap.UseDevMode(true)))
 	ctx := kong.Parse(&cli,
 		kong.Name("crossplane-migrator"),
 		kong.Description("Crossplane migration utilities"),
@@ -45,5 +46,5 @@ func main() {
 			WrapUpperBound: 80,
 		}),
 		kong.UsageOnError())
-	ctx.FatalIfErrorf(ctx.Run())
+	ctx.FatalIfErrorf(ctx.Run(logger))
 }
