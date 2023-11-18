@@ -3,8 +3,10 @@ package newpipeinecomposition
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	v1 "github.com/crossplane/crossplane/apis/apiextensions/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -18,6 +20,12 @@ func NewPipelineCompositionFromExisting(c *v1.Composition, functionRefName strin
 	if len(c.Spec.Pipeline) > 0 {
 		return c, nil
 	}
+
+	// prevent null timestamps in the output. k8s apply ignores this field
+	if c.ObjectMeta.CreationTimestamp.IsZero() {
+		c.ObjectMeta.CreationTimestamp = metav1.NewTime(time.Now())
+	}
+
 	cp := &v1.Composition{
 		TypeMeta:   c.TypeMeta,
 		ObjectMeta: c.ObjectMeta,
@@ -115,6 +123,9 @@ func SetMissingPatchSetFields(patchSet v1.PatchSet) v1.PatchSet {
 }
 
 func SetMissingPatchFields(patch v1.Patch) v1.Patch {
+	if patch.Type == "" {
+		patch.Type = v1.PatchTypeFromCompositeFieldPath
+	}
 	if len(patch.Transforms) == 0 {
 		return patch
 	}
