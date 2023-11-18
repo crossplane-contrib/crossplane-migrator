@@ -162,7 +162,7 @@ func TestNewDeploymentTemplateFromControllerConfig(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			dt := NewDeploymentTemplateFromControllerConfig(tc.args.cc)
 
-			if diff := cmp.Diff(tc.want.dt, dt); diff != "" {
+			if diff := cmp.Diff(tc.want.dt, dt, cmpopts.EquateApproxTime(time.Second*2)); diff != "" {
 				t.Errorf("%s\nControllerConfigToRuntimeDeploymentConfig(...): -want i, +got i:\n%s", tc.reason, diff)
 			}
 		})
@@ -170,7 +170,7 @@ func TestNewDeploymentTemplateFromControllerConfig(t *testing.T) {
 }
 
 func TestControllerConfigToRuntimeDeploymentConfig(t *testing.T) {
-
+	timeNow := metav1.NewTime(time.Now())
 	type args struct {
 		cc *v1alpha1.ControllerConfig
 	}
@@ -199,14 +199,16 @@ func TestControllerConfigToRuntimeDeploymentConfig(t *testing.T) {
 			args: args{
 				cc: &v1alpha1.ControllerConfig{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "test",
+						Name:              "test",
+						CreationTimestamp: timeNow,
 					},
 				},
 			},
 			want: want{
 				dr: &v1beta1.DeploymentRuntimeConfig{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "test",
+						Name:              "test",
+						CreationTimestamp: timeNow,
 					},
 					TypeMeta: metav1.TypeMeta{
 						Kind:       v1beta1.DeploymentRuntimeConfigKind,
@@ -230,7 +232,8 @@ func TestControllerConfigToRuntimeDeploymentConfig(t *testing.T) {
 			want: want{
 				dr: &v1beta1.DeploymentRuntimeConfig{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "test",
+						Name:              "test",
+						CreationTimestamp: timeNow,
 					},
 					TypeMeta: metav1.TypeMeta{
 						Kind:       v1beta1.DeploymentRuntimeConfigKind,
@@ -258,7 +261,10 @@ func TestControllerConfigToRuntimeDeploymentConfig(t *testing.T) {
 							Spec: &v1.DeploymentSpec{
 								Selector: &metav1.LabelSelector{},
 								Template: corev1.PodTemplateSpec{
-									ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{}},
+									ObjectMeta: metav1.ObjectMeta{
+										Labels:            map[string]string{},
+										CreationTimestamp: timeNow,
+									},
 								}},
 						},
 					},
@@ -271,7 +277,7 @@ func TestControllerConfigToRuntimeDeploymentConfig(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			dr, err := ControllerConfigToDeploymentRuntimeConfig(tc.args.cc)
-			if diff := cmp.Diff(tc.want.dr, dr); diff != "" {
+			if diff := cmp.Diff(tc.want.dr, dr, cmpopts.EquateApproxTime(time.Second*2)); diff != "" {
 				t.Errorf("%s\nControllerConfigToRuntimeDeploymentConfig(...): -want i, +got i:\n%s", tc.reason, diff)
 			}
 			if diff := cmp.Diff(tc.want.err, err, EquateErrors()); diff != "" {
