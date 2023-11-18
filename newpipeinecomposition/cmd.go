@@ -96,7 +96,7 @@ func (c *Cmd) Run() error {
 		return errors.Wrap(err, "Error generating new Composition")
 	}
 
-	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	s := json.NewSerializerWithOptions(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme, json.SerializerOptions{Yaml: true})
 
 	var output io.Writer
 

@@ -409,6 +409,18 @@ func TestSetMissingPatchFields(t *testing.T) {
 				},
 			},
 		},
+		"PatchWithoutType": {
+			args: args{
+				v1.Patch{
+					FromFieldPath: &fieldPath,
+					ToFieldPath:   &fieldPath,
+				},
+			},
+			want: v1.Patch{
+				Type:          v1.PatchTypeFromCompositeFieldPath,
+				FromFieldPath: &fieldPath,
+				ToFieldPath:   &fieldPath,
+			}},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
