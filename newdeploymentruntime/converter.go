@@ -2,6 +2,7 @@ package newdeploymentruntime
 
 import (
 	"errors"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -16,6 +17,8 @@ const (
 	ErrNilControllerConfig = "ControllerConfig is nil"
 )
 
+var timeNow = time.Now()
+
 func ControllerConfigToDeploymentRuntimeConfig(cc *v1alpha1.ControllerConfig) (*v1beta1.DeploymentRuntimeConfig, error) {
 	if cc == nil {
 		return nil, errors.New(ErrNilControllerConfig)
@@ -23,6 +26,7 @@ func ControllerConfigToDeploymentRuntimeConfig(cc *v1alpha1.ControllerConfig) (*
 	dt := NewDeploymentTemplateFromControllerConfig(cc)
 	drc := NewDeploymentRuntimeConfig(
 		WithName(cc.Name),
+		WithCreationTimestamp(metav1.NewTime(timeNow)),
 		WithServiceAccountTemplate(cc),
 		WithServiceTemplate(cc),
 		WithDeploymentTemplate(dt),
@@ -48,6 +52,10 @@ func NewDeploymentTemplateFromControllerConfig(cc *v1alpha1.ControllerConfig) *v
 			Labels:      cc.Labels,
 			Annotations: cc.Annotations,
 		}
+	}
+
+	if cc.CreationTimestamp.IsZero() || dt.Spec.Template.ObjectMeta.CreationTimestamp.IsZero() {
+		dt.Spec.Template.ObjectMeta.CreationTimestamp = metav1.NewTime(timeNow)
 	}
 
 	if cc.Spec.Metadata != nil {
@@ -160,6 +168,11 @@ func WithName(name string) func(*v1beta1.DeploymentRuntimeConfig) {
 	}
 }
 
+func WithCreationTimestamp(time metav1.Time) func(*v1beta1.DeploymentRuntimeConfig) {
+	return func(drc *v1beta1.DeploymentRuntimeConfig) {
+		drc.ObjectMeta.CreationTimestamp = time
+	}
+}
 func WithServiceAccountTemplate(cc *v1alpha1.ControllerConfig) func(*v1beta1.DeploymentRuntimeConfig) {
 	return func(drc *v1beta1.DeploymentRuntimeConfig) {
 		if cc != nil && (len(cc.Labels) > 0 || len(cc.Annotations) > 0) {
