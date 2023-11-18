@@ -3,10 +3,12 @@ package newdeploymentruntime
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/crossplane/crossplane/apis/pkg/v1alpha1"
 	"github.com/crossplane/crossplane/apis/pkg/v1beta1"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -19,6 +21,7 @@ func TestNewDeploymentTemplateFromControllerConfig(t *testing.T) {
 	saName := "sa-name"
 	className := "className"
 	image := "xpkg.upbound.io/crossplane/crossplane:latest"
+	timeNow := metav1.NewTime(time.Now())
 
 	type args struct {
 		cc *v1alpha1.ControllerConfig
@@ -104,7 +107,8 @@ func TestNewDeploymentTemplateFromControllerConfig(t *testing.T) {
 						Selector: &metav1.LabelSelector{},
 						Template: corev1.PodTemplateSpec{
 							ObjectMeta: metav1.ObjectMeta{
-								Labels: map[string]string{},
+								CreationTimestamp: timeNow,
+								Labels:            map[string]string{},
 							},
 							Spec: corev1.PodSpec{
 								Affinity: &corev1.Affinity{
@@ -158,7 +162,7 @@ func TestNewDeploymentTemplateFromControllerConfig(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			dt := NewDeploymentTemplateFromControllerConfig(tc.args.cc)
 
-			if diff := cmp.Diff(tc.want.dt, dt); diff != "" {
+			if diff := cmp.Diff(tc.want.dt, dt, cmpopts.EquateApproxTime(time.Second*2)); diff != "" {
 				t.Errorf("%s\nControllerConfigToRuntimeDeploymentConfig(...): -want i, +got i:\n%s", tc.reason, diff)
 			}
 		})
@@ -166,7 +170,7 @@ func TestNewDeploymentTemplateFromControllerConfig(t *testing.T) {
 }
 
 func TestControllerConfigToRuntimeDeploymentConfig(t *testing.T) {
-
+	timeNow := metav1.NewTime(time.Now())
 	type args struct {
 		cc *v1alpha1.ControllerConfig
 	}
@@ -195,14 +199,16 @@ func TestControllerConfigToRuntimeDeploymentConfig(t *testing.T) {
 			args: args{
 				cc: &v1alpha1.ControllerConfig{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "test",
+						Name:              "test",
+						CreationTimestamp: timeNow,
 					},
 				},
 			},
 			want: want{
 				dr: &v1beta1.DeploymentRuntimeConfig{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "test",
+						Name:              "test",
+						CreationTimestamp: timeNow,
 					},
 					TypeMeta: metav1.TypeMeta{
 						Kind:       v1beta1.DeploymentRuntimeConfigKind,
@@ -226,7 +232,8 @@ func TestControllerConfigToRuntimeDeploymentConfig(t *testing.T) {
 			want: want{
 				dr: &v1beta1.DeploymentRuntimeConfig{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "test",
+						Name:              "test",
+						CreationTimestamp: timeNow,
 					},
 					TypeMeta: metav1.TypeMeta{
 						Kind:       v1beta1.DeploymentRuntimeConfigKind,
@@ -254,7 +261,10 @@ func TestControllerConfigToRuntimeDeploymentConfig(t *testing.T) {
 							Spec: &v1.DeploymentSpec{
 								Selector: &metav1.LabelSelector{},
 								Template: corev1.PodTemplateSpec{
-									ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{}},
+									ObjectMeta: metav1.ObjectMeta{
+										Labels:            map[string]string{},
+										CreationTimestamp: timeNow,
+									},
 								}},
 						},
 					},
@@ -267,7 +277,7 @@ func TestControllerConfigToRuntimeDeploymentConfig(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			dr, err := ControllerConfigToDeploymentRuntimeConfig(tc.args.cc)
-			if diff := cmp.Diff(tc.want.dr, dr); diff != "" {
+			if diff := cmp.Diff(tc.want.dr, dr, cmpopts.EquateApproxTime(time.Second*2)); diff != "" {
 				t.Errorf("%s\nControllerConfigToRuntimeDeploymentConfig(...): -want i, +got i:\n%s", tc.reason, diff)
 			}
 			if diff := cmp.Diff(tc.want.err, err, EquateErrors()); diff != "" {
@@ -346,7 +356,7 @@ func TestNewContainerFromControllerConfig(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			c := NewContainerFromControllerConfig(tc.args.cc)
-			if diff := cmp.Diff(tc.want.c, c); diff != "" {
+			if diff := cmp.Diff(tc.want.c, c, cmpopts.EquateApproxTime(time.Second*2)); diff != "" {
 				t.Errorf("%s\nNewContainerFromControllerConfig(...): -want i, +got i:\n%s", tc.reason, diff)
 			}
 
