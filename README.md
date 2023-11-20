@@ -1,6 +1,10 @@
 # crossplane-migrator <!-- omit in toc -->
 
-This golang-based binary migrates YAML manifests to newer APIs. The following migrations are supported:
+Crossplane release [1.14](https://github.com/crossplane/crossplane/releases/tag/v1.14.0) introduced functions and the Deployment Runtime.
+
+In order to take advantage of these features, this golang-based binary can be used to convert legacy YAML manifests to newer APIs.
+
+The following conversions are supported:
 
 - [ControllerConfig](https://docs.crossplane.io/latest/concepts/providers/#controller-configuration) to [DeploymentRuntimeConfig](https://docs.crossplane.io/latest/concepts/providers/#runtime-configuration)
 - Compositions to use [Function-based Patch and Transform](https://github.com/crossplane-contrib/function-patch-and-transform) instead of the built-in engine.
@@ -17,6 +21,10 @@ This utility is proposed to be added to the Crossplane CLI in [1.15](https://git
 - [Known Issues](#known-issues)
 
 ## Installing
+
+Binary releases are available at <https://github.com/crossplane-contrib/crossplane-migrator/releases>.
+
+To install the latest version, run:
 
 ```shell
 go install github.com/crossplane-contrib/crossplane-migrator@latest
@@ -68,7 +76,6 @@ spec:
     apiVersion: pkg.crossplane.io/v1beta1   # currently apiVersion and kind are optional
     kind: DeploymentRuntimeConfig
     name: func-env
-
 ```
 
 ### Migrating Existing Compositions to use Pipelines
