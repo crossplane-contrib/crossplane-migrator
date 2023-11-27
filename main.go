@@ -22,14 +22,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/crossplane-contrib/crossplane-migrator/newdeploymentruntime"
-	"github.com/crossplane-contrib/crossplane-migrator/newpipeinecomposition"
+	"github.com/crossplane-contrib/crossplane-migrator/newpipelinecomposition"
 )
 
 var _ = kong.Must(&cli)
 
 var cli struct {
 	NewDeploymentRuntime   newdeploymentruntime.Cmd  `cmd:"" help:"Convert deprecated ControllerConfigs to DeploymentRuntimeConfigs."`
-	NewPipelineComposition newpipeinecomposition.Cmd `cmd:"" help:"Convert Compositions to Composition Pipelines with function-patch-and-transform."`
+	NewPipelineComposition newpipelinecomposition.Cmd `cmd:"" help:"Convert Compositions to Composition Pipelines with function-patch-and-transform."`
 }
 
 func main() {

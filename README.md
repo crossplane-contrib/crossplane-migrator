@@ -143,6 +143,6 @@ go build -o crossplane-migrator
 
 ## Known Issues
 
-- The migrator attempts to be as accurate as possible in mapping fields but has not been fully tested. The [ControllerConfig test suite](newdeploymentruntime/converter_test.go) and [Composition test suite](newpipeinecomposition/converter_test.go) attempt to cover all cases.
+- The migrator attempts to be as accurate as possible in mapping fields but has not been fully tested. The [ControllerConfig test suite](newdeploymentruntime/converter_test.go) and [Composition test suite](newpipelinecomposition/converter_test.go) attempt to cover all cases.
 - The generated `DeploymentRuntimeConfig` has the same `Name:` as the ControllerConfig.
   
