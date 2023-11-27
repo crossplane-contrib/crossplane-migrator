@@ -1,4 +1,4 @@
-package newpipeinecomposition
+package newpipelinecomposition
 
 import (
 	"testing"
