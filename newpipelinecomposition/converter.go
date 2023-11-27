@@ -37,12 +37,11 @@ func NewPipelineCompositionFromExisting(c *v1.Composition, functionRefName strin
 	}
 	// Migrate existing input
 	input := &Input{
-		Environment: &v1.EnvironmentConfiguration{},
-		PatchSets:   []v1.PatchSet{},
-		Resources:   []v1.ComposedTemplate{},
+		PatchSets: []v1.PatchSet{},
+		Resources: []v1.ComposedTemplate{},
 	}
 	if c.Spec.Environment != nil {
-		input.Environment = c.Spec.Environment
+		cp.Spec.Environment = c.Spec.Environment
 	}
 	if len(c.Spec.PatchSets) > 0 {
 		input.PatchSets = c.Spec.PatchSets
