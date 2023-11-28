@@ -1,6 +1,7 @@
 package newpipelinecomposition
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -11,13 +12,21 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-const defaultFunctionRefName = "function-patch-and-transform"
+const (
+	defaultFunctionRefName = "function-patch-and-transform"
+	ErrNilComposition      = "provided Composition is empty"
+)
 
 // NewPipelineCompositionFromExisting takes an existing composition and returns a composition
 // where the built-in patch & transform has been moved to a function.
 // if the existing composition has PipelineMode enabled, it will not change anything
 func NewPipelineCompositionFromExisting(c *v1.Composition, functionRefName string) (*v1.Composition, error) {
-	if len(c.Spec.Pipeline) > 0 {
+	if c == nil {
+		return nil, errors.New(ErrNilComposition)
+	}
+
+	// If Composition is already set to run in a Pipeline, return immediately
+	if c.Spec.Mode != nil && *c.Spec.Mode == v1.CompositionModePipeline {
 		return c, nil
 	}
 
@@ -35,14 +44,28 @@ func NewPipelineCompositionFromExisting(c *v1.Composition, functionRefName strin
 			PublishConnectionDetailsWithStoreConfigRef: c.Spec.PublishConnectionDetailsWithStoreConfigRef.DeepCopy(),
 		},
 	}
+
 	// Migrate existing input
 	input := &Input{
 		PatchSets: []v1.PatchSet{},
 		Resources: []v1.ComposedTemplate{},
 	}
+
+	// Most EnvironmentConfig settings remain at the Composition Level, but
+	// Environment Patches are handled at the Function level
 	if c.Spec.Environment != nil {
-		cp.Spec.Environment = c.Spec.Environment
+		cp.Spec.Environment = &v1.EnvironmentConfiguration{
+			DefaultData:        c.Spec.Environment.DefaultData,
+			EnvironmentConfigs: c.Spec.Environment.EnvironmentConfigs,
+			Policy:             c.Spec.Environment.Policy,
+		}
+		if len(c.Spec.Environment.Patches) > 0 {
+			input.Environment = &v1.EnvironmentConfiguration{
+				Patches: c.Spec.Environment.Patches,
+			}
+		}
 	}
+
 	if len(c.Spec.PatchSets) > 0 {
 		input.PatchSets = c.Spec.PatchSets
 	}
@@ -56,9 +79,8 @@ func NewPipelineCompositionFromExisting(c *v1.Composition, functionRefName strin
 		fr.Name = functionRefName
 	}
 
-	pipelineMode := v1.CompositionModePipeline
-
 	// Set up the pipeline
+	pipelineMode := v1.CompositionModePipeline
 	cp.Spec.Mode = &pipelineMode
 
 	ni := NewPatchAndTransformFunctionInput(input)
@@ -78,11 +100,10 @@ func NewPatchAndTransformFunctionInput(input *Input) *runtime.RawExtension {
 	// Populate any missing Fields that are optional in the built-in
 	// engine but required in the function
 	pi := SetMissingInputFields(input)
-
 	var inputType = map[string]any{
 		"apiVersion":  "pt.fn.crossplane.io/v1beta1",
 		"kind":        "Resources",
-		"environment": pi.Environment,
+		"environment": pi.Environment.DeepCopy(),
 		"patchSets":   pi.PatchSets,
 		"resources":   pi.Resources,
 	}
@@ -163,34 +184,6 @@ func emptyString(s *string) bool {
 	}
 
 	return *s == ""
-}
-
-// This struct is copied from function patch and transform
-type Input struct {
-	// PatchSets define a named set of patches that may be included by any
-	// resource in this Composition. PatchSets cannot themselves refer to other
-	// PatchSets.
-	//
-	// PatchSets are only used by the "Resources" mode of Composition. They
-	// are ignored by other modes.
-	// +optional
-	PatchSets []v1.PatchSet `json:"patchSets,omitempty"`
-
-	// Environment configures the environment in which resources are rendered.
-	//
-	// THIS IS AN ALPHA FIELD. Do not use it in production. It is not honored
-	// unless the relevant Crossplane feature flag is enabled, and may be
-	// changed or removed without notice.
-	// +optional
-	Environment *v1.EnvironmentConfiguration `json:"environment,omitempty"`
-
-	// Resources is a list of resource templates that will be used when a
-	// composite resource referring to this composition is created.
-	//
-	// Resources are only used by the "Resources" mode of Composition. They are
-	// ignored by other modes.
-	// +optional
-	Resources []v1.ComposedTemplate `json:"resources,omitempty"`
 }
 
 // SetTransformTypeRequiredFields sets fields that are required with
