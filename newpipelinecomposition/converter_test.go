@@ -1,10 +1,15 @@
 package newpipelinecomposition
 
 import (
+	"errors"
 	"testing"
+	"time"
 
+	commonv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	v1 "github.com/crossplane/crossplane/apis/apiextensions/v1"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -82,6 +87,207 @@ func TestSetMissingConnectionDetailFields(t *testing.T) {
 				t.Errorf("%s\nPopulateConnectionSecret(...): -want i, +got i:\n%s", tc.reason, diff)
 			}
 
+		})
+	}
+}
+
+func TestNewPipelineCompositionFromExisting(t *testing.T) {
+	timeNow := metav1.NewTime(time.Now())
+	pipelineMode := v1.CompositionModePipeline
+	alwaysResolve := commonv1.ResolvePolicyAlways
+	typeFromCompositeFieldPath := v1.PatchTypeFromCompositeFieldPath
+	fieldPath := "spec.test"
+	stringFmt := "test-%s"
+	intp := int64(1010)
+	type args struct {
+		c               *v1.Composition
+		functionRefName string
+	}
+	type want struct {
+		c   *v1.Composition
+		err error
+	}
+	cases := map[string]struct {
+		reason string
+		args   args
+		want   want
+	}{
+		"NilInput": {
+			reason: "Nil Input should return an error",
+			args:   args{},
+			want: want{
+				err: errors.New(ErrNilComposition),
+			},
+		},
+		"WithExistingPipeline": {
+			reason: "If Pipeline Mode is set, return Composition unmodified",
+			args: args{
+				c: &v1.Composition{
+					Spec: v1.CompositionSpec{
+						Mode: &pipelineMode,
+					},
+				},
+			},
+			want: want{
+				c: &v1.Composition{
+					Spec: v1.CompositionSpec{
+						Mode: &pipelineMode,
+					},
+				},
+				err: nil,
+			},
+		},
+		"WithEnvironmentConfig": {
+			reason: "CorrectlyHandleEnvironmentConfig",
+			args: args{
+				c: &v1.Composition{
+					Spec: v1.CompositionSpec{
+						PatchSets: []v1.PatchSet{
+							{
+								Name: "test-patchset",
+								Patches: []v1.Patch{
+									{
+										Type:          v1.PatchTypeFromCompositeFieldPath,
+										FromFieldPath: &fieldPath,
+										ToFieldPath:   &fieldPath,
+										Transforms: []v1.Transform{
+											{
+												String: &v1.StringTransform{
+													Format: &stringFmt,
+												},
+											},
+											{
+												Math: &v1.MathTransform{
+													Multiply: &intp,
+												},
+											},
+										},
+									},
+									{
+										Type:          v1.PatchTypeCombineFromComposite,
+										FromFieldPath: &fieldPath,
+										ToFieldPath:   &fieldPath,
+									},
+								},
+							},
+						},
+						Resources: []v1.ComposedTemplate{},
+						Environment: &v1.EnvironmentConfiguration{
+							EnvironmentConfigs: []v1.EnvironmentSource{
+								{
+									Type: "Reference",
+									Ref: &v1.EnvironmentSourceReference{
+										Name: "ref",
+									},
+								},
+							},
+							Patches: []v1.EnvironmentPatch{
+								{
+									Type:          typeFromCompositeFieldPath,
+									FromFieldPath: &fieldPath,
+									ToFieldPath:   &fieldPath,
+								},
+							},
+							Policy: &commonv1.Policy{
+								Resolve: &alwaysResolve,
+							},
+						},
+					},
+				},
+			},
+			want: want{
+				c: &v1.Composition{
+					ObjectMeta: metav1.ObjectMeta{
+						CreationTimestamp: timeNow,
+					},
+					Spec: v1.CompositionSpec{
+						Mode: &pipelineMode,
+						Environment: &v1.EnvironmentConfiguration{
+							EnvironmentConfigs: []v1.EnvironmentSource{
+								{
+									Type: "Reference",
+									Ref: &v1.EnvironmentSourceReference{
+										Name: "ref",
+									},
+								},
+							},
+							Policy: &commonv1.Policy{
+								Resolve: &alwaysResolve,
+							},
+						},
+						Pipeline: []v1.PipelineStep{
+							{
+								FunctionRef: v1.FunctionReference{Name: "function-patch-and-transform"},
+								Step:        "patch-and-transform",
+								Input: &runtime.RawExtension{
+									Object: &unstructured.Unstructured{
+										Object: map[string]any{
+											"apiVersion": string("pt.fn.crossplane.io/v1beta1"),
+											"kind":       string("Resources"),
+											"environment": &v1.EnvironmentConfiguration{
+												Patches: []v1.EnvironmentPatch{
+													{
+														Type:          typeFromCompositeFieldPath,
+														FromFieldPath: &fieldPath,
+														ToFieldPath:   &fieldPath,
+													},
+												},
+											},
+											"patchSets": []v1.PatchSet{
+												{
+													Name: "test-patchset",
+													Patches: []v1.Patch{
+														{
+															Type:          v1.PatchTypeFromCompositeFieldPath,
+															FromFieldPath: &fieldPath,
+															ToFieldPath:   &fieldPath,
+															Transforms: []v1.Transform{
+																{
+																	Type: v1.TransformTypeString,
+																	String: &v1.StringTransform{
+																		Format: &stringFmt,
+																		Type:   v1.StringTransformTypeFormat,
+																	},
+																},
+																{
+																	Type: v1.TransformTypeMath,
+																	Math: &v1.MathTransform{
+																		Multiply: &intp,
+																		Type:     v1.MathTransformTypeMultiply,
+																	},
+																},
+															},
+														},
+														{
+															Type:          v1.PatchTypeCombineFromComposite,
+															FromFieldPath: &fieldPath,
+															ToFieldPath:   &fieldPath,
+														},
+													},
+												},
+											},
+											"resources": []v1.ComposedTemplate{},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				err: nil,
+			},
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got, err := NewPipelineCompositionFromExisting(tc.args.c, tc.args.functionRefName)
+			if diff := cmp.Diff(tc.want.c, got, cmpopts.EquateApproxTime(time.Second*2)); diff != "" {
+				t.Errorf("%s\nNewPipelineCompositionFromExisting(...): -want err, +got err:\n%s", tc.reason, diff)
+			}
+
+			if diff := cmp.Diff(tc.want.err, err, EquateErrors()); diff != "" {
+				t.Errorf("%s\nNewPipelineCompositionFromExisting(...): -want err, +got err:\n%s", tc.reason, diff)
+			}
 		})
 	}
 }
@@ -217,7 +423,10 @@ func EquateErrors() cmp.Option {
 }
 
 func TestNewPatchAndTransformFunctionInput(t *testing.T) {
-	emptyInput := &Input{}
+	typeFromCompositeFieldPath := v1.PatchTypeFromCompositeFieldPath
+	fieldPath := "spec.test"
+	stringFmt := "test-%s"
+	intp := int64(1010)
 	type args struct {
 		input *Input
 	}
@@ -229,7 +438,7 @@ func TestNewPatchAndTransformFunctionInput(t *testing.T) {
 		"EmptyInput": {
 			reason: "EmptyInput will generate GVK",
 			args: args{
-				input: emptyInput,
+				input: &Input{},
 			},
 			want: &runtime.RawExtension{
 				Object: &unstructured.Unstructured{
@@ -239,6 +448,103 @@ func TestNewPatchAndTransformFunctionInput(t *testing.T) {
 						"environment": (*v1.EnvironmentConfiguration)(nil),
 						"patchSets":   []v1.PatchSet{},
 						"resources":   []v1.ComposedTemplate{},
+					},
+				},
+			},
+		},
+		"InputDefined": {
+			reason: "Input Fields defined",
+			args: args{
+				input: &Input{
+					PatchSets: []v1.PatchSet{
+						{
+							Name: "test-patchset",
+							Patches: []v1.Patch{
+								{
+									Type:          v1.PatchTypeFromCompositeFieldPath,
+									FromFieldPath: &fieldPath,
+									ToFieldPath:   &fieldPath,
+									Transforms: []v1.Transform{
+										{
+											String: &v1.StringTransform{
+												Format: &stringFmt,
+											},
+										},
+										{
+											Math: &v1.MathTransform{
+												Multiply: &intp,
+											},
+										},
+									},
+								},
+								{
+									Type:          v1.PatchTypeCombineFromComposite,
+									FromFieldPath: &fieldPath,
+									ToFieldPath:   &fieldPath,
+								},
+							},
+						},
+					},
+					Resources: []v1.ComposedTemplate{},
+					Environment: &v1.EnvironmentConfiguration{
+						Patches: []v1.EnvironmentPatch{
+							{
+								Type:          typeFromCompositeFieldPath,
+								FromFieldPath: &fieldPath,
+								ToFieldPath:   &fieldPath,
+							},
+						},
+					},
+				},
+			},
+			want: &runtime.RawExtension{
+				Object: &unstructured.Unstructured{
+					Object: map[string]any{
+						"apiVersion": string("pt.fn.crossplane.io/v1beta1"),
+						"kind":       string("Resources"),
+						"environment": &v1.EnvironmentConfiguration{
+							Patches: []v1.EnvironmentPatch{
+								{
+									Type:          typeFromCompositeFieldPath,
+									FromFieldPath: &fieldPath,
+									ToFieldPath:   &fieldPath,
+								},
+							},
+						},
+						"patchSets": []v1.PatchSet{
+							{
+								Name: "test-patchset",
+								Patches: []v1.Patch{
+									{
+										Type:          v1.PatchTypeFromCompositeFieldPath,
+										FromFieldPath: &fieldPath,
+										ToFieldPath:   &fieldPath,
+										Transforms: []v1.Transform{
+											{
+												Type: v1.TransformTypeString,
+												String: &v1.StringTransform{
+													Format: &stringFmt,
+													Type:   v1.StringTransformTypeFormat,
+												},
+											},
+											{
+												Type: v1.TransformTypeMath,
+												Math: &v1.MathTransform{
+													Multiply: &intp,
+													Type:     v1.MathTransformTypeMultiply,
+												},
+											},
+										},
+									},
+									{
+										Type:          v1.PatchTypeCombineFromComposite,
+										FromFieldPath: &fieldPath,
+										ToFieldPath:   &fieldPath,
+									},
+								},
+							},
+						},
+						"resources": []v1.ComposedTemplate{},
 					},
 				},
 			},
