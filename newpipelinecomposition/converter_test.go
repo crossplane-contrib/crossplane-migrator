@@ -187,6 +187,27 @@ func TestNewPipelineCompositionFromExisting(t *testing.T) {
 									FromFieldPath: &fieldPath,
 									ToFieldPath:   &fieldPath,
 								},
+								{
+									Type:          typeFromCompositeFieldPath,
+									FromFieldPath: &fieldPath,
+									ToFieldPath:   &fieldPath,
+									Transforms: []v1.Transform{
+										{
+											Type: v1.TransformTypeString,
+											String: &v1.StringTransform{
+												Format: &stringFmt,
+												//Type:   v1.StringTransformTypeFormat,
+											},
+										},
+										{
+											Type: v1.TransformTypeMath,
+											Math: &v1.MathTransform{
+												Multiply: &intp,
+												//Type:     v1.MathTransformTypeMultiply,
+											},
+										},
+									},
+								},
 							},
 							Policy: &commonv1.Policy{
 								Resolve: &alwaysResolve,
@@ -230,6 +251,27 @@ func TestNewPipelineCompositionFromExisting(t *testing.T) {
 														Type:          typeFromCompositeFieldPath,
 														FromFieldPath: &fieldPath,
 														ToFieldPath:   &fieldPath,
+													},
+													{
+														Type:          typeFromCompositeFieldPath,
+														FromFieldPath: &fieldPath,
+														ToFieldPath:   &fieldPath,
+														Transforms: []v1.Transform{
+															{
+																Type: v1.TransformTypeString,
+																String: &v1.StringTransform{
+																	Format: &stringFmt,
+																	Type:   v1.StringTransformTypeFormat,
+																},
+															},
+															{
+																Type: v1.TransformTypeMath,
+																Math: &v1.MathTransform{
+																	Multiply: &intp,
+																	Type:     v1.MathTransformTypeMultiply,
+																},
+															},
+														},
 													},
 												},
 											},
@@ -643,6 +685,97 @@ func TestSetMissingPatchSetFields(t *testing.T) {
 				t.Errorf("%s\nNewSetMissingPatchFields(...): -want i, +got i:\n%s", tc.reason, diff)
 			}
 
+		})
+	}
+}
+
+func TestSetMissingEnvironmentPatchFields(t *testing.T) {
+	fieldPath := "spec.id"
+	stringFmt := "test-%s"
+	intp := int64(1010)
+	type args struct {
+		patch v1.EnvironmentPatch
+	}
+	cases := map[string]struct {
+		reason string
+		args   args
+		want   v1.EnvironmentPatch
+	}{
+		"PatchWithoutTransforms": {
+			args: args{
+				v1.EnvironmentPatch{
+					Type:          v1.PatchTypeCombineFromComposite,
+					FromFieldPath: &fieldPath,
+					ToFieldPath:   &fieldPath,
+				},
+			},
+			want: v1.EnvironmentPatch{
+				Type:          v1.PatchTypeCombineFromComposite,
+				FromFieldPath: &fieldPath,
+				ToFieldPath:   &fieldPath,
+			}},
+		"TransformArrayMissingFields": {
+			reason: "Nested missing Types are filled in for a transform array",
+			args: args{
+				v1.EnvironmentPatch{
+					Type:          v1.PatchTypeFromCompositeFieldPath,
+					FromFieldPath: &fieldPath,
+					ToFieldPath:   &fieldPath,
+					Transforms: []v1.Transform{
+						{
+							String: &v1.StringTransform{
+								Format: &stringFmt,
+							},
+						},
+						{
+							Math: &v1.MathTransform{
+								Multiply: &intp,
+							},
+						},
+					},
+				},
+			},
+			want: v1.EnvironmentPatch{
+				Type:          v1.PatchTypeFromCompositeFieldPath,
+				FromFieldPath: &fieldPath,
+				ToFieldPath:   &fieldPath,
+				Transforms: []v1.Transform{
+					{
+						Type: v1.TransformTypeString,
+						String: &v1.StringTransform{
+							Type:   v1.StringTransformTypeFormat,
+							Format: &stringFmt,
+						},
+					},
+					{
+						Type: v1.TransformTypeMath,
+						Math: &v1.MathTransform{
+							Type:     v1.MathTransformTypeMultiply,
+							Multiply: &intp,
+						},
+					},
+				},
+			},
+		},
+		"PatchWithoutType": {
+			args: args{
+				v1.EnvironmentPatch{
+					FromFieldPath: &fieldPath,
+					ToFieldPath:   &fieldPath,
+				},
+			},
+			want: v1.EnvironmentPatch{
+				Type:          v1.PatchTypeFromCompositeFieldPath,
+				FromFieldPath: &fieldPath,
+				ToFieldPath:   &fieldPath,
+			}},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got := SetMissingEnvironmentPatchFields(tc.args.patch)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Errorf("%s\nNewSetMissingPatchFields(...): -want i, +got i:\n%s", tc.reason, diff)
+			}
 		})
 	}
 }
