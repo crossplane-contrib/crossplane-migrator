@@ -114,10 +114,17 @@ func NewPatchAndTransformFunctionInput(input *Input) *runtime.RawExtension {
 }
 
 func SetMissingInputFields(input *Input) *Input {
-	var processedInput = &Input{
-		Environment: input.Environment,
-	}
+	var processedInput = &Input{}
 
+	if input.Environment != nil && len(input.Environment.Patches) > 0 {
+		processedEnvPatches := []v1.EnvironmentPatch{}
+		for _, envPatch := range input.Environment.Patches {
+			processedEnvPatches = append(processedEnvPatches, SetMissingEnvironmentPatchFields(envPatch))
+		}
+		processedInput.Environment = &v1.EnvironmentConfiguration{
+			Patches: processedEnvPatches,
+		}
+	}
 	processedPatchSet := []v1.PatchSet{}
 	for _, patchSet := range input.PatchSets {
 		processedPatchSet = append(processedPatchSet, SetMissingPatchSetFields(patchSet))
@@ -140,6 +147,21 @@ func SetMissingPatchSetFields(patchSet v1.PatchSet) v1.PatchSet {
 	}
 	patchSet.Patches = p
 	return patchSet
+}
+
+func SetMissingEnvironmentPatchFields(patch v1.EnvironmentPatch) v1.EnvironmentPatch {
+	if patch.Type == "" {
+		patch.Type = v1.PatchTypeFromCompositeFieldPath
+	}
+	if len(patch.Transforms) == 0 {
+		return patch
+	}
+	t := []v1.Transform{}
+	for _, transform := range patch.Transforms {
+		t = append(t, SetTransformTypeRequiredFields(transform))
+	}
+	patch.Transforms = t
+	return patch
 }
 
 func SetMissingPatchFields(patch v1.Patch) v1.Patch {
