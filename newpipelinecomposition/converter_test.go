@@ -196,14 +196,12 @@ func TestNewPipelineCompositionFromExisting(t *testing.T) {
 											Type: v1.TransformTypeString,
 											String: &v1.StringTransform{
 												Format: &stringFmt,
-												//Type:   v1.StringTransformTypeFormat,
 											},
 										},
 										{
 											Type: v1.TransformTypeMath,
 											Math: &v1.MathTransform{
 												Multiply: &intp,
-												//Type:     v1.MathTransformTypeMultiply,
 											},
 										},
 									},
