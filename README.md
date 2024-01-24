@@ -1,4 +1,9 @@
+
 # crossplane-migrator <!-- omit in toc -->
+
+**Note** this project is archived, as of https://github.com/crossplane/crossplane/pull/5275 and Crossplane 1.15 this functionality has been ported to the Crossplane CLI under `crossplane beta convert`.
+
+---
 
 Crossplane release [1.14](https://github.com/crossplane/crossplane/releases/tag/v1.14.0) introduced functions and the Deployment Runtime.
 
